@@ -21,10 +21,10 @@ const youtubeApi = (function () {
 
   const getVideoDetailById = async (id) => {
     const response = await axios.get(
-      `https://youtube.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${API_KEY}`
+      `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&id=${id}&key=${API_KEY}`
     );
 
-    return response.data.items[0].snippet;
+    return { ...response.data.items[0].snippet, resourceId: { videoId: response.data.items[0].id } };
   }
 
   const searchVideo = async (keyword) => {
