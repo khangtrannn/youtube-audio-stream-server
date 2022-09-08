@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT || 1235;
 
 app.use(cors());
-app.use(express.static('public'))
+app.use('/api', express.static('public'))
 
 let redisClient;
 
