@@ -43,6 +43,15 @@ app.get('/api/videos', async (req, res) => {
   }
 });
 
+app.get('/api/videos/search', async (req, res) => {
+  try {
+    res.json(await youtubeApi.searchVideo(req.query.keyword));
+  } catch (err) {
+    console.log(err);
+    res.send('Search video error.');
+  }
+});
+
 app.get('/api/proxy', async (req, res) => {
   try {
     request.get(req.query.url).pipe(res);
