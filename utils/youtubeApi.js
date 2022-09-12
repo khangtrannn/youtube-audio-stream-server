@@ -36,7 +36,7 @@ const youtubeApi = (function () {
   }
 
   const isValidID = async (id) => {
-    return ytdl.validateID(id);
+    return await ytdl.validateID(id);
   }
 
   return {

@@ -65,7 +65,7 @@ router.get("/videos/search", async (req, res) => {
 
 router.get("/stream/:videoId", async (req, res) => {
   try {
-    if (youtubeApi.isValidID(req.params.videoId)) {
+    if (await youtubeApi.isValidID(req.params.videoId)) {
       streamify(req.params.videoId).pipe(res);
     }
   } catch (err) {
