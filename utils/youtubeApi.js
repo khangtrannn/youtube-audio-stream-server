@@ -1,5 +1,6 @@
 const axios = require("axios");
 const usetube = require('usetube');
+const ytdl = require("ytdl-core");
 
 const API_KEY = "AIzaSyC8eoQm09jA8c4_2Qs7ekLTHAJYekm-4Tc";
 
@@ -34,11 +35,16 @@ const youtubeApi = (function () {
     }));
   }
 
+  const isValidID = async (id) => {
+    return ytdl.validateID(id);
+  }
+
   return {
     getPlaylistsByChannelId,
     getVideosByPlaylistId,
     getVideoDetailById,
-    searchVideo
+    searchVideo,
+    isValidID,
   };
 })();
 
