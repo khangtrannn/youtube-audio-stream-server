@@ -1,6 +1,8 @@
 const axios = require("axios");
 const usetube = require('usetube');
 const ytdl = require("ytdl-core");
+const moment = require("moment");
+const momentDurationFormatSetup = require("moment-duration-format");
 
 const API_KEY = "AIzaSyC8eoQm09jA8c4_2Qs7ekLTHAJYekm-4Tc";
 
@@ -25,7 +27,11 @@ const youtubeApi = (function () {
       `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&id=${id}&key=${API_KEY}`
     );
 
-    return { ...response.data.items[0].snippet, resourceId: { videoId: response.data.items[0].id } };
+    const data = response.data.items[0];
+    const duration = moment.duration(data.contentDetails.duration).format('h:mm:ss').padStart(4, '0:0')
+    const thumbnails = data.snippet.thumbnails;
+    const thumbnail = (thumbnails.maxres || thumbnails.standard || thumbnails.high)?.url;
+    return { ...data.snippet, resourceId: { videoId: data.id }, duration, thumbnail };
   }
 
   const searchVideo = async (keyword) => {
