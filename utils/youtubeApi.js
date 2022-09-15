@@ -8,13 +8,14 @@ const API_KEY = "AIzaSyC8eoQm09jA8c4_2Qs7ekLTHAJYekm-4Tc";
 
 const transformVideo = (data) => {
   const videoId = data.videoId;
-  const thumbnail = data.thumbnail.thumbnails.sort((prev, next) => next.height > prev.height)[0].url;
+  const thumbnail = data.thumbnail?.thumbnails.sort((prev, next) => next.height > prev.height)[0].url;
   const title = data.title.runs[0]?.text;
-  const publishedTime = data.publishedTimeText.simpleText;
-  const duration = data.lengthText.simpleText;
-  const view = data.shortViewCountText.simpleText;
-  const channelTitle = data.longBylineText.runs[0].text;
-  const channelId = data.longBylineText.runs[0].navigationEndpoint.browseEndpoint.browseId;
+  const publishedTime = data.publishedTimeText?.simpleText;
+  const duration = data.lengthText?.simpleText;
+  const view = data.shortViewCountText?.simpleText;
+  const channelTitle = data.longBylineText?.runs[0]?.text;
+  const channelId = data.longBylineText?.runs[0]?.navigationEndpoint.browseEndpoint.browseId;
+  const channelThumbnail = data.channelThumbnailSupportedRenderers.channelThumbnailWithLinkRenderer.thumbnail.thumbnails[0].url;
 
   return {
     videoId,
@@ -25,6 +26,7 @@ const transformVideo = (data) => {
     view,
     channelTitle,
     channelId,
+    channelThumbnail,
   };
 }
 
@@ -66,8 +68,8 @@ const youtubeApi = (function () {
 
     const videosJson = JSON.parse(videos);
     const items = findVal(videosJson, 'itemSectionRenderer').contents;
-    const transformedItems = items.filter((item) => item.videoRenderer).map((item) => transformVideo(item.videoRenderer));
-    return transformedItems;
+
+    return items.filter((item) => item.videoRenderer).map((item) => transformVideo(item.videoRenderer));
   }
 
   const isValidID = async (id) => {
