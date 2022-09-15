@@ -1,10 +1,32 @@
 const axios = require("axios");
-const usetube = require('usetube');
 const ytdl = require("ytdl-core");
 const moment = require("moment");
 const momentDurationFormatSetup = require("moment-duration-format");
+const findVal = require('./findVal');
 
 const API_KEY = "AIzaSyC8eoQm09jA8c4_2Qs7ekLTHAJYekm-4Tc";
+
+const transformVideo = (data) => {
+  const videoId = data.videoId;
+  const thumbnail = data.thumbnail.thumbnails.sort((prev, next) => next.height > prev.height)[0].url;
+  const title = data.title.runs[0]?.text;
+  const publishedTime = data.publishedTimeText.simpleText;
+  const duration = data.lengthText.simpleText;
+  const view = data.shortViewCountText.simpleText;
+  const channelTitle = data.longBylineText.runs[0].text;
+  const channelId = data.longBylineText.runs[0].navigationEndpoint.browseEndpoint.browseId;
+
+  return {
+    videoId,
+    thumbnail,
+    title,
+    publishedTime,
+    duration,
+    view,
+    channelTitle,
+    channelId,
+  };
+}
 
 const youtubeApi = (function () {
   const getPlaylistsByChannelId = async (channelId) => {
@@ -19,6 +41,7 @@ const youtubeApi = (function () {
     const response = await axios.get(
       `https://youtube.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&maxResults=50&playlistId=${playlistId}&key=${API_KEY}`
     );
+
     return response.data.items.map((item) => item.snippet);
   }
 
@@ -35,10 +58,16 @@ const youtubeApi = (function () {
   }
 
   const searchVideo = async (keyword) => {
-    const response = await usetube.searchVideo(keyword);
-    return await Promise.all(response.videos.map((video) => {
-        return youtubeApi.getVideoDetailById(video.id);
-    }));
+    const data = await axios.get("https://m.youtube.com/results?videoEmbeddable=true&search_query=" + encodeURI(keyword));
+
+    const videos = data.data
+      .split("var ytInitialData = ")[1]
+      .split(";</script>")[0];
+
+    const videosJson = JSON.parse(videos);
+    const items = findVal(videosJson, 'itemSectionRenderer').contents;
+    const transformedItems = items.filter((item) => item.videoRenderer).map((item) => transformVideo(item.videoRenderer));
+    return transformedItems;
   }
 
   const isValidID = async (id) => {
