@@ -8,7 +8,7 @@ const API_KEY = "AIzaSyC8eoQm09jA8c4_2Qs7ekLTHAJYekm-4Tc";
 
 const transformVideo = (data) => {
   const videoId = data.videoId;
-  const thumbnail = data.thumbnail?.thumbnails.sort((prev, next) => next.height > prev.height)[0].url;
+  const thumbnail = '/api/proxy?url=' + data.thumbnail?.thumbnails.sort((prev, next) => next.height > prev.height)[0].url;
   const title = data.title.runs[0]?.text;
   const publishedTime = data.publishedTimeText?.simpleText;
   const duration = data.lengthText?.simpleText;
@@ -66,10 +66,19 @@ const youtubeApi = (function () {
       .split("var ytInitialData = ")[1]
       .split(";</script>")[0];
 
+	  const continuation = data.data.split('{"token":"')[1].split('",')[0];
+
+	  const visitorData = data.data.split('{"ytConfigData":{"visitorData":"')[1].split('",')[0]
+	  
     const videosJson = JSON.parse(videos);
     const items = findVal(videosJson, 'itemSectionRenderer').contents;
 
-    return items.filter((item) => item.videoRenderer).map((item) => transformVideo(item.videoRenderer));
+	  return {
+		  continuation,
+		  visitorData,
+		  videos: items.filter((item) => item.videoRenderer).map((item) => transformVideo(item.videoRenderer)),
+	  };
+
   }
 
   const isValidID = async (id) => {
