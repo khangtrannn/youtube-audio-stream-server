@@ -2,20 +2,21 @@ const axios = require("axios");
 const ytdl = require("ytdl-core");
 const moment = require("moment");
 const momentDurationFormatSetup = require("moment-duration-format");
-const findVal = require('./findVal');
+const findVal = require("./findVal");
+const { findTextBetween } = require("./sttringUtils");
 
 const API_KEY = "AIzaSyC8eoQm09jA8c4_2Qs7ekLTHAJYekm-4Tc";
 
 const transformVideo = (data) => {
   const videoId = data.videoId;
-  const thumbnail = '/api/proxy?url=' + data.thumbnail?.thumbnails.sort((prev, next) => next.height > prev.height)[0].url;
+  const thumbnail = "/api/proxy?url=" + data.thumbnail?.thumbnails.sort((prev, next) => next.height > prev.height)[0].url;
   const title = data.title.runs[0]?.text;
   const publishedTime = data.publishedTimeText?.simpleText;
   const duration = data.lengthText?.simpleText;
   const view = data.shortViewCountText?.simpleText;
   const channelTitle = data.longBylineText?.runs[0]?.text;
-  const channelId = data.longBylineText?.runs[0]?.navigationEndpoint.browseEndpoint.browseId;
-  const channelThumbnail = data.channelThumbnailSupportedRenderers.channelThumbnailWithLinkRenderer.thumbnail.thumbnails[0].url;
+  const channelId = data.longBylineText?.runs[0]?.navigationEndpoint?.browseEndpoint.browseId;
+  const channelThumbnail = data.channelThumbnailSupportedRenderers?.channelThumbnailWithLinkRenderer?.thumbnail?.thumbnails[0].url;
 
   return {
     videoId,
@@ -28,7 +29,7 @@ const transformVideo = (data) => {
     channelId,
     channelThumbnail,
   };
-}
+};
 
 const youtubeApi = (function () {
   const getPlaylistsByChannelId = async (channelId) => {
@@ -45,7 +46,7 @@ const youtubeApi = (function () {
     );
 
     return response.data.items.map((item) => item.snippet);
-  }
+  };
 
   const getVideoDetailById = async (id) => {
     const response = await axios.get(
@@ -53,43 +54,71 @@ const youtubeApi = (function () {
     );
 
     const data = response.data.items[0];
-    const duration = moment.duration(data.contentDetails.duration).format('h:mm:ss').padStart(4, '0:0')
+    const duration = moment.duration(data.contentDetails.duration).format("h:mm:ss").padStart(4, "0:0");
     const thumbnails = data.snippet.thumbnails;
-    const thumbnail = (thumbnails.maxres || thumbnails.standard || thumbnails.high)?.url;
-    return { ...data.snippet, resourceId: { videoId: data.id }, duration, thumbnail };
-  }
+    const thumbnail = (
+      thumbnails.maxres ||
+      thumbnails.standard ||
+      thumbnails.high
+    )?.url;
+
+    return { ...data.snippet, videoId: data.id, duration, thumbnail };
+  };
 
   const searchVideo = async (keyword) => {
-    const data = await axios.get("https://m.youtube.com/results?videoEmbeddable=true&search_query=" + encodeURI(keyword));
+    const { data } = await axios.get("https://m.youtube.com/results?videoEmbeddable=true&search_query=" + encodeURI(keyword));
+    const videos = findTextBetween(data, "var ytInitialData = ", ";</script>");
+    const continuation = findTextBetween(data, '{"token":"', '",');
+    const visitorData = findTextBetween(data, '{"ytConfigData":{"visitorData":"', '",');
 
-    const videos = data.data
-      .split("var ytInitialData = ")[1]
-      .split(";</script>")[0];
-
-	  const continuation = data.data.split('{"token":"')[1].split('",')[0];
-
-	  const visitorData = data.data.split('{"ytConfigData":{"visitorData":"')[1].split('",')[0]
-	  
     const videosJson = JSON.parse(videos);
-    const items = findVal(videosJson, 'itemSectionRenderer').contents;
+    const items = findVal(videosJson, "itemSectionRenderer").contents;
 
-	  return {
-		  continuation,
-		  visitorData,
-		  videos: items.filter((item) => item.videoRenderer).map((item) => transformVideo(item.videoRenderer)),
-	  };
+    return {
+      continuation,
+      visitorData,
+      videos: items
+        .filter((item) => item.videoRenderer)
+        .map((item) => transformVideo(item.videoRenderer)),
+    };
+  };
 
-  }
+  const searchVideoContinuation = async (continuation, visitorData) => {
+    const { data } = await axios.post(
+      "https://www.youtube.com/youtubei/v1/search",
+      {
+        context: {
+          client: {
+            visitorData,
+            clientName: "WEB",
+            clientVersion: "2.20220913.04.00",
+          },
+        },
+        continuation,
+      }
+    );
+
+    const items = findVal(data, "itemSectionRenderer").contents;
+    const token = findVal(data, "continuationCommand").token;
+
+    return {
+      continuation: token,
+      videos: items
+        .filter((item) => item.videoRenderer)
+        .map((item) => transformVideo(item.videoRenderer)),
+    };
+  };
 
   const isValidID = async (id) => {
     return await ytdl.validateID(id);
-  }
+  };
 
   return {
     getPlaylistsByChannelId,
     getVideosByPlaylistId,
     getVideoDetailById,
     searchVideo,
+    searchVideoContinuation,
     isValidID,
   };
 })();

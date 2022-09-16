@@ -11,6 +11,13 @@ const app = express();
 const port = process.env.PORT || 1235;
 
 app.use(cors());
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
+app.use(express.json());
 
 let redisClient;
 
@@ -59,7 +66,16 @@ router.get("/videos/search", async (req, res) => {
     res.json(await youtubeApi.searchVideo(req.query.keyword));
   } catch (err) {
     console.log(err);
-    res.send("Search video error.");
+    res.statusCode(500).send("Search video error.");
+  }
+});
+
+router.post("/videos/search/continuation", async (req, res) => {
+  try {
+    res.json(await youtubeApi.searchVideoContinuation(req.body.continuation, req.body.visitorData));
+  } catch (err) {
+    console.log(err);
+    res.statusCode(500).send("Search video error.");
   }
 });
 
