@@ -1,11 +1,14 @@
 const axios = require("axios");
 const ytdl = require("ytdl-core");
 const moment = require("moment");
-const momentDurationFormatSetup = require("moment-duration-format");
 const findVal = require("./findVal");
 const { findTextBetween } = require("./sttringUtils");
 
 const API_KEY = "AIzaSyC8eoQm09jA8c4_2Qs7ekLTHAJYekm-4Tc";
+
+const isLiveStreamVideo = (video) => {
+  return video.badges?.[0].metadataBadgeRenderer?.icon?.iconType === 'LIVE';
+}
 
 const transformVideo = (data) => {
   const videoId = data.videoId;
@@ -14,9 +17,11 @@ const transformVideo = (data) => {
   const publishedTime = data.publishedTimeText?.simpleText;
   const duration = data.lengthText?.simpleText;
   const view = data.shortViewCountText?.simpleText;
-  const channelTitle = data.longBylineText?.runs[0]?.text;
-  const channelId = data.longBylineText?.runs[0]?.navigationEndpoint?.browseEndpoint.browseId;
-  const channelThumbnail = data.channelThumbnailSupportedRenderers?.channelThumbnailWithLinkRenderer?.thumbnail?.thumbnails[0].url;
+  const channel = {
+    id: data.longBylineText?.runs[0]?.navigationEndpoint?.browseEndpoint.browseId,
+    title: data.longBylineText?.runs[0]?.text,
+    thumbnail: data.channelThumbnailSupportedRenderers?.channelThumbnailWithLinkRenderer?.thumbnail?.thumbnails[0].url,
+  }
 
   return {
     videoId,
@@ -25,9 +30,7 @@ const transformVideo = (data) => {
     publishedTime,
     duration,
     view,
-    channelTitle,
-    channelId,
-    channelThumbnail,
+    channel,
   };
 };
 
@@ -78,7 +81,7 @@ const youtubeApi = (function () {
       continuation,
       visitorData,
       videos: items
-        .filter((item) => item.videoRenderer)
+        .filter((item) => item.videoRenderer && !isLiveStreamVideo(item.videoRenderer))
         .map((item) => transformVideo(item.videoRenderer)),
     };
   };
@@ -104,7 +107,7 @@ const youtubeApi = (function () {
     return {
       continuation: token,
       videos: items
-        .filter((item) => item.videoRenderer)
+        .filter((item) => item.videoRenderer && !isLiveStreamVideo(item.videoRenderer))
         .map((item) => transformVideo(item.videoRenderer)),
     };
   };

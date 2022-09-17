@@ -67,7 +67,7 @@ router.get("/videos/search", async (req, res) => {
     res.json(await youtubeApi.searchVideo(req.query.keyword));
   } catch (err) {
     console.log(err);
-    res.statusCode(500).send("Search video error.");
+    res.send("Search video error.");
   }
 });
 
@@ -76,7 +76,7 @@ router.post("/videos/search/continuation", async (req, res) => {
     res.json(await youtubeApi.searchVideoContinuation(req.body.continuation, req.body.visitorData));
   } catch (err) {
     console.log(err);
-    res.statusCode(500).send("Search video error.");
+    res.send("Search video error.");
   }
 });
 
