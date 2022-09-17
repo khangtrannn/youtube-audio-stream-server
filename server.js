@@ -2,6 +2,7 @@ const express = require("express");
 const redis = require("redis");
 const request = require("request");
 const cors = require("cors");
+const ytstream = require('yt-stream');
 
 const youtubeApi = require("./utils/youtubeApi");
 const streamify = require("./utils/streamify");
@@ -77,6 +78,17 @@ router.post("/videos/search/continuation", async (req, res) => {
     console.log(err);
     res.statusCode(500).send("Search video error.");
   }
+});
+
+// TODO: another stream method can be considered
+router.get("/stream/v2/:videoId", async (req, res) => {
+  const stream = await ytstream.stream(`https://www.youtube.com/watch?v=${req.params.videoId}`, {
+    quality: 'high',
+    type: 'video',
+    highWaterMark: 1048576 * 32
+  });
+
+  stream.stream.pipe(res);
 });
 
 router.get("/stream/:videoId", async (req, res) => {
