@@ -100,6 +100,32 @@ const youtubeApi = (function () {
     };
   };
 
+  const getSuggestVideosContinuation = async (continuation, visitorData) => {
+    const { data } = await axios.post(
+      "https://www.youtube.com/youtubei/v1/next",
+      {
+        context: {
+          client: {
+            visitorData,
+            clientName: "WEB",
+            clientVersion: "2.20220913.04.00",
+          },
+        },
+        continuation,
+      }
+    );
+
+    const items = findVal(data, "continuationItems");
+    const continuationToken = findVal(items, "continuationEndpoint").continuationCommand.token;
+
+    return {
+      continuation: continuationToken,
+      videos: items
+        .filter((item) => item.compactVideoRenderer)
+        .map((item) => transformVideo(item.compactVideoRenderer)),
+    };
+  }
+
   const searchVideoContinuation = async (continuation, visitorData) => {
     const { data } = await axios.post(
       "https://www.youtube.com/youtubei/v1/search",
@@ -136,6 +162,7 @@ const youtubeApi = (function () {
     getVideoDetailById,
     searchVideo,
     searchVideoContinuation,
+    getSuggestVideosContinuation,
     isValidID,
   };
 })();
