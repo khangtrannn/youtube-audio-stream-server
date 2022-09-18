@@ -65,7 +65,9 @@ router.get("/videos", async (req, res) => {
 
 router.get("/videos/detail/:id", async (req, res) => {
   try {
-    res.json(await youtubeApi.getVideoDetailById(req.params.id));
+    if (await youtubeApi.isValidID(req.params.id)) {
+      res.json(await youtubeApi.getVideoDetailById(req.params.id));
+    }
   } catch (err) {
     console.log(err);
     res.send("Get video detail error.");

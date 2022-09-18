@@ -87,6 +87,7 @@ const youtubeApi = (function () {
       visitorData,
       continuation,
       videoDetail: {
+        id: videoDetail.videoDetails.videoId,
         title: videoDetail.videoDetails.title,
         thumbnail: videoDetail.videoDetails.thumbnail.thumbnails.pop().url,
         channel: {
