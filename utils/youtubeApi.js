@@ -117,7 +117,7 @@ const youtubeApi = (function () {
     );
 
     const items = findVal(data, "continuationItems");
-    const continuationToken = findVal(items, "continuationEndpoint").continuationCommand.token;
+    const continuationToken = findVal(items, "continuationEndpoint")?.continuationCommand.token;
 
     return {
       continuation: continuationToken,
