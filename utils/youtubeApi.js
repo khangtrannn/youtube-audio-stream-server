@@ -12,7 +12,7 @@ const isLiveStreamVideo = (video) => {
 
 const transformVideo = (data) => {
   const videoId = data.videoId;
-  const thumbnail = data.thumbnail?.thumbnails.sort((prev, next) => next.height > prev.height)[0].url;
+  const thumbnail = data.thumbnail?.thumbnails[0].url; // Return first thumbnail with small resolution
   const title = data.title.runs[0]?.text;
   const publishedTime = data.publishedTimeText?.simpleText;
   const duration = data.lengthText?.simpleText;
