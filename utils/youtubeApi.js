@@ -24,7 +24,7 @@ const transformVideo = (data) => {
   };
 
   return {
-    videoId,
+    id: videoId,
     thumbnail,
     title,
     publishedTime,
