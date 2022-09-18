@@ -1,6 +1,7 @@
 const express = require("express");
 const redis = require("redis");
 const request = require("request");
+const axios = require("axios");
 const cors = require("cors");
 const ytstream = require('yt-stream');
 
@@ -101,9 +102,11 @@ router.get("/stream/:videoId", async (req, res) => {
   }
 });
 
-router.get("/proxy", async (req, res) => {
+router.get("/images", async (req, res) => {
   try {
-    request.get(req.query.url).pipe(res);
+    const response = await axios.get(req.query.url, { responseType: 'arraybuffer' })
+    const buffer = Buffer.from(response.data, "utf-8")
+    res.send(buffer);
   } catch (err) {
     console.log(err);
   }
