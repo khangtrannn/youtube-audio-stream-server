@@ -1,6 +1,5 @@
 const axios = require("axios");
 const ytdl = require("ytdl-core");
-const moment = require("moment");
 const findVal = require("./findVal");
 const { findTextBetween } = require("./sttringUtils");
 
@@ -13,15 +12,16 @@ const isLiveStreamVideo = (video) => {
 const transformVideo = (data) => {
   const videoId = data.videoId;
   const thumbnail = data.thumbnail?.thumbnails[0].url; // Return first thumbnail with small resolution
-  const title = data.title.runs[0]?.text;
+  const title = data.title.runs?.[0]?.text || data.title.simpleText;
   const publishedTime = data.publishedTimeText?.simpleText;
   const duration = data.lengthText?.simpleText;
   const view = data.shortViewCountText?.simpleText;
   const channel = {
-    id: data.longBylineText?.runs[0]?.navigationEndpoint?.browseEndpoint.browseId,
-    title: data.longBylineText?.runs[0]?.text,
-    thumbnail: data.channelThumbnailSupportedRenderers?.channelThumbnailWithLinkRenderer?.thumbnail?.thumbnails[0].url,
-  }
+    id: data.longBylineText?.runs?.[0]?.navigationEndpoint?.browseEndpoint.browseId,
+    title: data.longBylineText?.runs?.[0]?.text,
+    thumbnail: data.channelThumbnailSupportedRenderers?.channelThumbnailWithLinkRenderer?.thumbnail?.thumbnails[0].url 
+      || data.channelThumbnail?.thumbnails?.[0].url,
+  };
 
   return {
     videoId,
@@ -51,23 +51,6 @@ const youtubeApi = (function () {
     return response.data.items.map((item) => item.snippet);
   };
 
-  const getVideoDetailById = async (id) => {
-    const response = await axios.get(
-      `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&id=${id}&key=${API_KEY}`
-    );
-
-    const data = response.data.items[0];
-    const duration = moment.duration(data.contentDetails.duration).format("h:mm:ss").padStart(4, "0:0");
-    const thumbnails = data.snippet.thumbnails;
-    const thumbnail = (
-      thumbnails.maxres ||
-      thumbnails.standard ||
-      thumbnails.high
-    )?.url;
-
-    return { ...data.snippet, videoId: data.id, duration, thumbnail };
-  };
-
   const searchVideo = async (keyword) => {
     const { data } = await axios.get("https://m.youtube.com/results?videoEmbeddable=true&search_query=" + encodeURI(keyword));
     const videos = findTextBetween(data, "var ytInitialData = ", ";</script>");
@@ -83,6 +66,37 @@ const youtubeApi = (function () {
       videos: items
         .filter((item) => item.videoRenderer && !isLiveStreamVideo(item.videoRenderer))
         .map((item) => transformVideo(item.videoRenderer)),
+    };
+  };
+
+  const getVideoDetailById = async (id) => {
+    const { data } = await axios.get(`https://www.youtube.com/watch?v=${id}`);
+
+    const response = JSON.parse(findTextBetween(data, "var ytInitialData = ", ";</script>"));
+
+    const twoColumnWatchNextResults = findVal(response, "twoColumnWatchNextResults");
+    const channelDetail = findVal(twoColumnWatchNextResults.results, "videoOwnerRenderer");
+    const videoDetail = JSON.parse(findTextBetween(data, "var ytInitialPlayerResponse = ", ";</script>"));
+
+    const secondaryResults = twoColumnWatchNextResults.secondaryResults.secondaryResults.results;
+
+    const continuation = findVal(twoColumnWatchNextResults.secondaryResults, "continuationCommand").token;
+    const visitorData = findTextBetween(data, '{"ytConfigData":{"visitorData":"', '",');
+
+    return {
+      visitorData,
+      continuation,
+      videoDetail: {
+        title: videoDetail.videoDetails.title,
+        thumbnail: videoDetail.videoDetails.thumbnail.thumbnails.pop().url,
+        channel: {
+          title: channelDetail.title.runs[0].text,
+          thumbnail: channelDetail.thumbnail.thumbnails[0].url,
+        }
+      },
+      suggestVideos: secondaryResults
+        .filter((item) => item.compactVideoRenderer)
+        .map((item) => transformVideo(item.compactVideoRenderer)),
     };
   };
 

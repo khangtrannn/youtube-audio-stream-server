@@ -15,7 +15,6 @@
     "cors": "^2.8.5",
     "express": "^4.18.1",
     "fluent-ffmpeg": "^2.1.2",
-    "moment": "^2.29.4",
     "moment-duration-format": "^2.3.2",
     "nodemon": "^2.0.20",
     "redis": "^4.3.1",
