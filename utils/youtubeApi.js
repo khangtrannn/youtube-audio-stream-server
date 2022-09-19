@@ -101,7 +101,7 @@ const youtubeApi = (function () {
     return {
       visitorData,
       continuation,
-      suggestVideos: secondaryResults
+      videos: secondaryResults
         .filter((item) => item.compactVideoRenderer)
         .map((item) => transformVideo(item.compactVideoRenderer)),
     };
