@@ -78,6 +78,21 @@ const youtubeApi = (function () {
     const channelDetail = findVal(twoColumnWatchNextResults.results, "videoOwnerRenderer");
     const videoDetail = JSON.parse(findTextBetween(data, "var ytInitialPlayerResponse = ", ";</script>"));
 
+    return {
+      id: videoDetail.videoDetails.videoId,
+      title: videoDetail.videoDetails.title,
+      thumbnail: videoDetail.videoDetails.thumbnail.thumbnails.pop().url,
+      channel: {
+        title: channelDetail.title.runs[0].text,
+        thumbnail: channelDetail.thumbnail.thumbnails[0].url,
+      }
+    };
+  };
+
+  const getSuggestVideos = async (id) => {
+    const { data } = await axios.get(`https://www.youtube.com/watch?v=${id}`);
+    const response = JSON.parse(findTextBetween(data, "var ytInitialData = ", ";</script>"));
+    const twoColumnWatchNextResults = findVal(response, "twoColumnWatchNextResults");
     const secondaryResults = twoColumnWatchNextResults.secondaryResults.secondaryResults.results;
 
     const continuation = findVal(twoColumnWatchNextResults.secondaryResults, "continuationCommand").token;
@@ -86,20 +101,11 @@ const youtubeApi = (function () {
     return {
       visitorData,
       continuation,
-      videoDetail: {
-        id: videoDetail.videoDetails.videoId,
-        title: videoDetail.videoDetails.title,
-        thumbnail: videoDetail.videoDetails.thumbnail.thumbnails.pop().url,
-        channel: {
-          title: channelDetail.title.runs[0].text,
-          thumbnail: channelDetail.thumbnail.thumbnails[0].url,
-        }
-      },
       suggestVideos: secondaryResults
         .filter((item) => item.compactVideoRenderer)
         .map((item) => transformVideo(item.compactVideoRenderer)),
     };
-  };
+  }
 
   const getSuggestVideosContinuation = async (continuation, visitorData) => {
     const { data } = await axios.post(
@@ -163,6 +169,7 @@ const youtubeApi = (function () {
     getVideoDetailById,
     searchVideo,
     searchVideoContinuation,
+    getSuggestVideos,
     getSuggestVideosContinuation,
     isValidID,
   };

@@ -74,6 +74,17 @@ router.get("/videos/detail/:id", async (req, res) => {
   }
 });
 
+router.get("/videos/suggestion/:id", async (req, res) => {
+  try {
+    if (await youtubeApi.isValidID(req.params.id)) {
+      res.json(await youtubeApi.getSuggestVideos(req.params.id));
+    }
+  } catch (err) {
+    console.log(err);
+    res.send("Get video detail error.");
+  }
+});
+
 router.post("/videos/suggestion/continuation", async (req, res) => {
   try {
     res.json(await youtubeApi.getSuggestVideosContinuation(req.body.continuation, req.body.visitorData));
