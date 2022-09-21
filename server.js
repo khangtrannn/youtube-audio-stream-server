@@ -112,11 +112,10 @@ router.post("/videos/search/continuation", async (req, res) => {
   }
 });
 
-// TODO: another stream method can be considered
 router.get("/stream/v2/:videoId", async (req, res) => {
   const stream = await ytstream.stream(`https://www.youtube.com/watch?v=${req.params.videoId}`, {
     quality: 'high',
-    type: 'video',
+    type: 'mp3',
     highWaterMark: 1048576 * 32
   });
 
