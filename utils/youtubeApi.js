@@ -78,10 +78,17 @@ const youtubeApi = (function () {
     const channelDetail = findVal(twoColumnWatchNextResults.results, "videoOwnerRenderer");
     const videoDetail = JSON.parse(findTextBetween(data, "var ytInitialPlayerResponse = ", ";</script>"));
 
+    const duration = videoDetail.videoDetails.lengthSeconds;
+
+    console.log(new Date(duration * 1000).toISOString())
+
     return {
       id: videoDetail.videoDetails.videoId,
       title: videoDetail.videoDetails.title,
       thumbnail: videoDetail.videoDetails.thumbnail.thumbnails.pop().url,
+      duration: duration < 3600 
+        ? new Date(duration * 1000).toISOString().substring(14, 19) 
+        : new Date(duration * 1000).toISOString().substring(11, 19),
       channel: {
         title: channelDetail.title.runs[0].text,
         thumbnail: channelDetail.thumbnail.thumbnails[0].url,
