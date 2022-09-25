@@ -29,40 +29,6 @@ let redisClient;
   await redisClient.connect();
 })();
 
-router.get("/videos/channel/:channel", async (req, res) => {
-  try {
-    const playlists = await youtubeApi.getPlaylistsByChannelId(
-      req.params.channel
-    );
-    playlists.forEach(async (playlist) => {
-      const videos = await youtubeApi.getVideosByPlaylistId(playlist);
-      videos.forEach(
-        async (video) =>
-          await redisClient.HSET(
-            "videos",
-            video.resourceId.videoId,
-            JSON.stringify(video)
-          )
-      );
-    });
-
-    res.send("Craw videos from channel successfully.");
-  } catch (err) {
-    console.log(err);
-    res.send("Craw videos from channel error.");
-  }
-});
-
-router.get("/videos", async (req, res) => {
-  try {
-    const videos = await redisClient.HGETALL("videos");
-    res.json(Object.keys(videos).map((key) => JSON.parse(videos[key])));
-  } catch (err) {
-    console.log(err);
-    res.send("Get videos from cache error.");
-  }
-});
-
 router.get("/videos/detail/:id", async (req, res) => {
   try {
     if (await youtubeApi.isValidID(req.params.id)) {
@@ -83,6 +49,29 @@ router.get("/videos/suggestion/:id", async (req, res) => {
     console.log(err);
     res.send("Get video detail error.");
   }
+});
+
+router.get('/videos/favorite/:userId', async (req, res) => {
+  const favorites = await redisClient.HGETALL("favorites");
+  const userFavorites = favorites[req.params.userId] ? JSON.parse(favorites[req.params.userId]) : [];
+  res.json(userFavorites);
+});
+
+router.post('/videos/favorite', async (req, res) => {
+  const { userId, video } = req.body;
+  const favorites = await redisClient.HGETALL("favorites");
+
+  const userFavorites = favorites[userId.toString()] ? JSON.parse(favorites[userId.toString()]) : [];
+  const isFavoriteAlready = userFavorites.find((favorite) => favorite.id === video.id);
+
+  if (isFavoriteAlready) {
+    return res.json({ success: true });
+  }
+
+  userFavorites.push(video);
+  await redisClient.HSET("favorites", userId.toString(), JSON.stringify(userFavorites));
+
+  res.json({ success: true });
 });
 
 router.post("/videos/suggestion/continuation", async (req, res) => {
@@ -114,7 +103,7 @@ router.post("/videos/search/continuation", async (req, res) => {
 
 router.get("/stream/v2/:videoId", async (req, res) => {
   const stream = await ytstream.stream(`https://www.youtube.com/watch?v=${req.params.videoId}`, {
-    quality: 'high',
+    quality: 'low',
     type: 'mp3',
     highWaterMark: 1048576 * 32
   });

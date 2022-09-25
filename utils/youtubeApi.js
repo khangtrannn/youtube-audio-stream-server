@@ -80,8 +80,6 @@ const youtubeApi = (function () {
 
     const duration = videoDetail.videoDetails.lengthSeconds;
 
-    console.log(new Date(duration * 1000).toISOString())
-
     return {
       id: videoDetail.videoDetails.videoId,
       title: videoDetail.videoDetails.title,
