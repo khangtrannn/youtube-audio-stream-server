@@ -68,9 +68,20 @@ router.post('/videos/favorite', async (req, res) => {
     return res.json({ success: true });
   }
 
-  userFavorites.push(video);
+  userFavorites.unshift(video);
   await redisClient.HSET("favorites", userId.toString(), JSON.stringify(userFavorites));
 
+  res.json({ success: true });
+});
+
+router.post('/videos/unfavorite', async (req, res) => {
+  const { userId, video } = req.body;
+  const favorites = await redisClient.HGETALL("favorites");
+
+  let userFavorites = favorites[userId.toString()] ? JSON.parse(favorites[userId.toString()]) : [];
+  userFavorites = userFavorites.filter((favorite) => favorite.id !== video.id);
+  
+  await redisClient.HSET("favorites", userId.toString(), JSON.stringify(userFavorites));
   res.json({ success: true });
 });
 
