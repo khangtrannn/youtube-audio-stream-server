@@ -19,6 +19,7 @@
     "nodemon": "^2.0.20",
     "redis": "^4.3.1",
     "request": "^2.88.2",
+    "youtube-stream-url": "^2.3.0",
     "yt-stream": "^1.2.1",
     "ytdl-core": "^4.11.2"
   }

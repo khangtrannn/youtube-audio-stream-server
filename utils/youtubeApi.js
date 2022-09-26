@@ -1,5 +1,7 @@
 const axios = require("axios");
 const ytdl = require("ytdl-core");
+const Youtube = require('youtube-stream-url');
+
 const findVal = require("./findVal");
 const { findTextBetween } = require("./sttringUtils");
 
@@ -164,6 +166,13 @@ const youtubeApi = (function () {
     };
   };
 
+  const getStreamAudioUrl = async (id) => {
+    const data = await Youtube.getInfo({ url: `https://www.youtube.com/watch?v=${id}` });
+    if (data) {
+      return data.formats.filter((stream) => stream.audioQuality === 'AUDIO_QUALITY_LOW')[0]?.url;
+    }
+  }
+
   const isValidID = async (id) => {
     return await ytdl.validateID(id);
   };
@@ -176,6 +185,7 @@ const youtubeApi = (function () {
     searchVideoContinuation,
     getSuggestVideos,
     getSuggestVideosContinuation,
+    getStreamAudioUrl,
     isValidID,
   };
 })();

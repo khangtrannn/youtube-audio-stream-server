@@ -3,10 +3,7 @@ const redis = require("redis");
 const request = require("request");
 const axios = require("axios");
 const cors = require("cors");
-const ytstream = require('yt-stream');
-
 const youtubeApi = require("./utils/youtubeApi");
-const streamify = require("./utils/streamify");
 
 const router = express.Router();
 const app = express();
@@ -112,21 +109,13 @@ router.post("/videos/search/continuation", async (req, res) => {
   }
 });
 
-router.get("/stream/v2/:videoId", async (req, res) => {
-  const stream = await ytstream.stream(`https://www.youtube.com/watch?v=${req.params.videoId}`, {
-    quality: 'low',
-    type: 'mp3',
-    highWaterMark: 1048576 * 32
-  });
-
-  stream.stream.pipe(res);
-});
 
 router.get("/stream/:videoId", async (req, res) => {
   try {
-    if (await youtubeApi.isValidID(req.params.videoId)) {
-      streamify(req.params.videoId).pipe(res);
-    }
+    const url = await youtubeApi.getStreamAudioUrl(req.params.videoId);
+    const stream = request(url);
+    req.pipe(stream)
+    stream.pipe(res)
   } catch (err) {
     console.error(err);
   }
